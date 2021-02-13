@@ -1,5 +1,8 @@
 import tweepy
 import os 
+import logging
+import json
+from tweepy.streaming import StreamListener
 
 def create_bot_api():
     consumer_key = os.getenv("CONSUMER_KEY")
@@ -20,9 +23,19 @@ def create_bot_api():
         print("Error during API creation")
     return api
 
+class MyStreamListener(tweepy.StreamListener):
+    def on_data(self, data):
+        print("Ha habido una mencion")
+        data = json.loads(data)
+        print(data["text"])
+        
 def main():
     api = create_bot_api()
-    api.update_status("Tamos activos")
+    #api.update_status("Hola??")
+    while True:
+        myStreamListener = MyStreamListener()
+        myStream = tweepy.Stream(auth = api.auth, listener=myStreamListener)
+        myStream.filter(track=["@BotBolsa"])
     
 if __name__=="__main__":
     main()
