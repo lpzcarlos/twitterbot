@@ -2,6 +2,7 @@ import tweepy
 import os 
 import logging
 import json
+import request
 from tweepy.streaming import StreamListener
 
 def create_bot_api():
@@ -26,8 +27,12 @@ def create_bot_api():
 class MyStreamListener(tweepy.StreamListener):
     def on_data(self, data):
         print("Ha habido una mencion")
+        print(data)
         data = json.loads(data)
         print(data["text"])
+        respuesta = "tu mas &#128156;"
+        api = create_bot_api()
+        api.update_status("@" + data["user"]["screen_name"] + " " + respuesta, in_reply_to_status_id=data["id"])
         
 def main():
     api = create_bot_api()
