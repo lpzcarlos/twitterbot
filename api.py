@@ -5,7 +5,7 @@ import json
 
 url = 'https://pro-api.coinmarketcap.com/v2/cryptocurrency/quotes/latest'
 parameters = {
-  'symbol':'ADA',
+  'symbol':'GARD',
 
 }
 headers = {

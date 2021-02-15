@@ -2,7 +2,8 @@ import tweepy
 import os 
 import logging
 import json
-import request
+from requests import Request, Session
+from requests.exceptions import ConnectionError, Timeout, TooManyRedirects
 from tweepy.streaming import StreamListener
 
 def create_bot_api():
@@ -24,19 +25,40 @@ def create_bot_api():
         print("Error during API creation")
     return api
 
+def printNewTweet(data):
+    url = 'https://pro-api.coinmarketcap.com/v2/cryptocurrency/quotes/latest'
+    headers = {
+        'Accepts': 'application/json',
+        'X-CMC_PRO_API_KEY': '00df95b4-07b9-4fe5-bed8-304fc7ce9c47',
+    }
+    symbolCrypto = data["text"].split()[1]
+    print("symbol: " + symbolCrypto)
+    parameters = {
+        'symbol': symbolCrypto
+    }
+    session = Session()
+    session.headers.update(headers)
+    
+    try:
+        response = session.get(url, params=parameters)
+        valueCrypto = json.loads(response.text)
+        print(valueCrypto["data"][symbolCrypto][0]["quote"]["USD"]["price"])
+       # print(valueCrypto["price"])
+        return valueCrypto["data"][symbolCrypto][0]["quote"]["USD"]["price"]
+    except (ConnectionError, Timeout, TooManyRedirects) as e:
+        print(e)
+
 class MyStreamListener(tweepy.StreamListener):
     def on_data(self, data):
-        print("Ha habido una mencion")
-        print(data)
         data = json.loads(data)
-        print(data["text"])
-        respuesta = "tu mas &#128156;"
+        reply_id = data["id"]
         api = create_bot_api()
-        api.update_status("@" + data["user"]["screen_name"] + " " + respuesta, in_reply_to_status_id=data["id"])
+        respuesta = printNewTweet(data)
+        print("TweeT:" + "@" + data["user"]["screen_name"] + " " + str(respuesta))
+        api.update_status("@" + data["user"]["screen_name"] + " " + str(respuesta), in_reply_to_status_id=reply_id)
         
 def main():
     api = create_bot_api()
-    #api.update_status("Hola??")
     while True:
         myStreamListener = MyStreamListener()
         myStream = tweepy.Stream(auth = api.auth, listener=myStreamListener)
