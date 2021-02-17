@@ -2,6 +2,7 @@ import tweepy
 import os 
 import logging
 import json
+import math
 from requests import Request, Session
 from requests.exceptions import ConnectionError, Timeout, TooManyRedirects
 from tweepy.streaming import StreamListener
@@ -25,7 +26,7 @@ def create_bot_api():
         print("Error during API creation")
     return api
 
-def printNewTweet(data):
+def newCryptoValue(data):
     url = 'https://pro-api.coinmarketcap.com/v2/cryptocurrency/quotes/latest'
     headers = {
         'Accepts': 'application/json',
@@ -42,9 +43,8 @@ def printNewTweet(data):
     try:
         response = session.get(url, params=parameters)
         valueCrypto = json.loads(response.text)
-        print(valueCrypto["data"][symbolCrypto][0]["quote"]["USD"]["price"])
-       # print(valueCrypto["price"])
-        return valueCrypto["data"][symbolCrypto][0]["quote"]["USD"]["price"]
+        #print(valueCrypto["data"][symbolCrypto][0]["quote"]["USD"]["price"])
+        return valueCrypto#["data"][symbolCrypto][0]["quote"]["USD"]["price"]
     except (ConnectionError, Timeout, TooManyRedirects) as e:
         print(e)
 
@@ -52,12 +52,24 @@ class MyStreamListener(tweepy.StreamListener):
     def on_data(self, data):
         data = json.loads(data)
         reply_id = data["id"]
-        api = create_bot_api()
-        respuesta = printNewTweet(data)
-        print("TweeT:" + "@" + data["user"]["screen_name"] + " " + str(respuesta))
-        api.update_status("@" + data["user"]["screen_name"] + " " + str(respuesta), in_reply_to_status_id=reply_id)
+        #api = create_bot_api()
+        jsonCrypto = newCryptoValue(data)
+        priceCrypto = round((jsonCrypto["data"][data["text"].split()[1]][0]["quote"]["USD"]["price"]), 2)
+        last1h = round((jsonCrypto["data"][data["text"].split()[1]][0]["quote"]["USD"]["percent_change_1h"]), 2)
+        last24h = round((jsonCrypto["data"][data["text"].split()[1]][0]["quote"]["USD"]["percent_change_24h"]), 2)
+        last7d = round((jsonCrypto["data"][data["text"].split()[1]][0]["quote"]["USD"]["percent_change_7d"]), 2)
+        #print("Tweet:" + "@" + data["user"]["screen_name"] + " " + str(respuesta))
+        #return ("@" + data["user"]["screen_name"] + " " + str(respuesta))
+        api.update_status("@" + data["user"]["screen_name"] + " " 
+                          + "Price: " + str(priceCrypto) + "$"
+                          + "\n Last 1h: " + str(last1h) + "%"
+                          + "\n Last 24h: " + str(last24h) + "%"
+                          + "\n Last 7d: " + str(last7d) + "%"
+                          + "\n\n #cryptocurrency #bot", 
+                          in_reply_to_status_id=reply_id)
         
 def main():
+    global api
     api = create_bot_api()
     while True:
         myStreamListener = MyStreamListener()
